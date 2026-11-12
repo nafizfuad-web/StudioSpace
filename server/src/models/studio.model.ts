@@ -1,7 +1,7 @@
 // src/models/studio.model.ts
 // MongoDB Studio model definitions and collection helper.
 
-import { Collection, Db, ObjectId, IndexSpecification } from "mongodb";
+import { Collection, Db, ObjectId, IndexDescription } from "mongodb";
 import { getDb } from "../config/database";
 
 export type StudioCategory =
@@ -46,7 +46,7 @@ export function getStudioCollection(): Collection<StudioDocument> {
   const db: Db = getDb();
   studioCollection = db.collection<StudioDocument>("studios");
 
-  const indexes: IndexSpecification[] = [
+  const indexes: IndexDescription[] = [
     // Common queries: by category, location.city, price range, status
     { key: { category: 1 }, name: "idx_category" },
     { key: { "location.city": 1 }, name: "idx_city" },

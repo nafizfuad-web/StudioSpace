@@ -1,7 +1,7 @@
 // src/models/booking.model.ts
 // MongoDB Booking model definitions and collection helper.
 
-import { Collection, Db, ObjectId, IndexSpecification } from "mongodb";
+import { Collection, Db, ObjectId, IndexDescription } from "mongodb";
 import { getDb } from "../config/database";
 
 export type BookingStatus =
@@ -33,7 +33,7 @@ export function getBookingCollection(): Collection<BookingDocument> {
   const db: Db = getDb();
   bookingCollection = db.collection<BookingDocument>("bookings");
 
-  const indexes: IndexSpecification[] = [
+  const indexes: IndexDescription[] = [
     // Queries by studio, renter, host, and date range
     { key: { studioId: 1 }, name: "idx_studioId" },
     { key: { renterId: 1 }, name: "idx_renterId" },
