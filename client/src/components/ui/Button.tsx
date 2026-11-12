@@ -1,14 +1,17 @@
 import React, { forwardRef } from "react";
+import Link from "next/link";
 
 export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  href?: string;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -40,6 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       className = "",
       disabled,
+      href,
       children,
       ...props
     },
@@ -48,11 +52,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles =
       "inline-flex items-center justify-center font-medium transition-all duration-200 cursor-pointer select-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
 
+    const combinedClasses = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
+
+    if (href) {
+      return (
+        <Link href={href} className={combinedClasses}>
+          {leftIcon}
+          <span>{children}</span>
+          {rightIcon}
+        </Link>
+      );
+    }
+
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
-        className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+        className={combinedClasses}
         {...props}
       >
         {isLoading && (
