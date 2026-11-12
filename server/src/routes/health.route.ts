@@ -6,7 +6,6 @@ router.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({
     status: "ok",
     message: "StudioSpace API is running",
-    timestamp: new Date().toISOString(),
   });
 });
 
