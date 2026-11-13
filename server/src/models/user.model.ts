@@ -2,7 +2,7 @@
 // MongoDB User model definitions and collection helper.
 
 import { Collection, Db, ObjectId, IndexDescription } from "mongodb";
-import { getDb } from "../config/database";
+import { getDb } from "../config/database.js";
 
 export type UserRole = "renter" | "host" | "admin";
 
@@ -10,7 +10,9 @@ export interface UserDocument {
   _id: ObjectId;
   name: string;
   email: string; // unique, normalized lower‑case
-  passwordHash?: string; // optional for future OAuth
+  emailVerified: boolean; // managed by Better Auth
+  image?: string; // Better Auth profile image URL
+  passwordHash?: string; // legacy field; Better Auth stores credentials in `accounts`
   role: UserRole;
   avatar?: string; // URL to avatar image
   createdAt: Date;
@@ -50,6 +52,7 @@ export function createUserDoc(params: {
   return {
     name: params.name,
     email: params.email.toLowerCase().trim(),
+    emailVerified: false,
     passwordHash: params.passwordHash,
     role: params.role ?? "renter",
     avatar: params.avatar,

@@ -11,7 +11,7 @@ import { Testimonials } from "@/components/home/Testimonials";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased selection:bg-accent/30 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased selection:bg-accent/30 selection:text-foreground">
       {/* 5.A Navigation Bar */}
       <Navbar />
 

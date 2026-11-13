@@ -2,21 +2,24 @@
   "name": "studiospace-server",
   "version": "1.0.0",
   "description": "StudioSpace backend server",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/session.test.ts test/require-auth.test.ts test/studio-owner.test.ts test/studio.route.test.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "better-auth": "^1.7.22",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongodb": "^5.9.2"
+    "mongodb": "^6.22.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

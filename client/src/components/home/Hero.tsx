@@ -28,7 +28,7 @@ export const Hero: React.FC = () => {
           {/* Main Hero Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-[1.1] max-w-4xl">
             Find the Perfect Space for Your Next{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-accent-light to-white">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-accent-light to-foreground">
               Creative Project.
             </span>
           </h1>

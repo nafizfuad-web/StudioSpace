@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
-:root {
-  /* StudioSpace Premium Dark Palette */
+:root,
+[data-theme="dark"] {
+  /* StudioSpace Premium Dark Palette (default) */
   --background: #090a0f;
   --background-secondary: #0f1017;
   --surface: #14161f;
   --surface-elevated: #1a1c27;
   --surface-hover: #212433;
+  --image-overlay: #090a0f;
 
   /* StudioSpace Vibrant Teal / Cyan Accent */
   --accent: #00d2c4;
   --accent-hover: #00b8ac;
   --accent-light: #4ef2e5;
+  --accent-contrast: #090a0f;
   --accent-glow: rgba(0, 210, 196, 0.22);
   --accent-muted: rgba(0, 210, 196, 0.1);
 
@@ -33,6 +36,35 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  /* Light palette keeps the same surfaces, hierarchy, and teal identity. */
+  --background: #f8fafc;
+  --background-secondary: #f1f5f9;
+  --surface: #ffffff;
+  --surface-elevated: #f8fafc;
+  --surface-hover: #eef2f6;
+
+  --accent: #0f766e;
+  --accent-hover: #115e59;
+  --accent-light: #14b8a6;
+  --accent-contrast: #ffffff;
+  --accent-glow: rgba(15, 118, 110, 0.16);
+  --accent-muted: rgba(15, 118, 110, 0.08);
+
+  --foreground: #0f172a;
+  --foreground-secondary: #334155;
+  --foreground-muted: #475569;
+  --foreground-subtle: #64748b;
+
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-medium: rgba(15, 23, 42, 0.15);
+  --border-accent: rgba(15, 118, 110, 0.35);
+
+  color-scheme: light;
 }
 
 @theme inline {
@@ -41,10 +73,12 @@
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-hover: var(--surface-hover);
+  --color-image-overlay: var(--image-overlay);
 
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-light: var(--accent-light);
+  --color-accent-contrast: var(--accent-contrast);
   --color-accent-glow: var(--accent-glow);
   --color-accent-muted: var(--accent-muted);
 
@@ -63,8 +97,8 @@
 
 /* Base Body Styles */
 html {
-  color-scheme: dark;
   scroll-behavior: smooth;
+  background-color: var(--background);
 }
 
 body {
@@ -74,6 +108,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* Accessibility: Respect Reduced Motion Preferences */
@@ -106,4 +141,25 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--surface-hover);
+}
+
+/* Theme toggle icons: sun in dark mode, moon in light mode. */
+.theme-icon {
+  position: absolute;
+  transition: opacity 200ms ease, transform 250ms ease;
+}
+
+.theme-icon-moon {
+  opacity: 0;
+  transform: rotate(-45deg) scale(0.75);
+}
+
+html[data-theme="light"] .theme-icon-sun {
+  opacity: 0;
+  transform: rotate(45deg) scale(0.75);
+}
+
+html[data-theme="light"] .theme-icon-moon {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
 }

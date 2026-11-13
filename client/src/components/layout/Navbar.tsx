@@ -1,173 +1,459 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Container, Button, Badge } from "@/components/ui";
+import { Button, Container } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
+).replace(/\/+$/, "");
+
+const NAV_LINKS = [
+  { label: "Explore", href: "/#explore" },
+  { label: "Categories", href: "/#categories" },
+  { label: "List Your Space", href: "/#host" },
+] as const;
+
+interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+}
+
+interface SessionResponse {
+  user?: SessionUser | null;
+}
+
+function getDisplayName(user: SessionUser): string {
+  const name = user.name?.trim();
+  if (name) return name;
+
+  const emailName = user.email?.split("@")[0]?.trim();
+  return emailName || "Account";
+}
+
+function getInitials(user: SessionUser): string {
+  const source = user.name?.trim() || user.email?.split("@")[0]?.trim() || "U";
+  const parts = source.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+
+  return `${parts[0].slice(0, 1)}${parts[parts.length - 1].slice(0, 1)}`.toUpperCase();
+}
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Load the Better Auth session so the navbar can show the account option.
+  useEffect(() => {
+    const controller = new AbortController();
+    let isActive = true;
+
+    const loadSession = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/get-session`, {
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) return;
+
+        const data = (await response.json()) as SessionResponse | null;
+
+        if (isActive && data?.user?.id) {
+          setUser({
+            id: data.user.id,
+            name: data.user.name ?? null,
+            email: data.user.email ?? null,
+          });
+        }
+      } catch {
+        // Browsing does not depend on auth; ignore failed session checks.
+      } finally {
+        if (isActive) setIsSessionLoading(false);
+      }
+    };
+
+    void loadSession();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, []);
+
+  // Close the mobile drawer when the desktop breakpoint is reached.
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleResize = () => {
+      if (window.matchMedia("(min-width: 48rem)").matches) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mobileMenuOpen]);
+
+  // Close the mobile drawer with Escape.
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
+  // Close the account dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAccountMenuOpen(false);
+        accountButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [accountMenuOpen]);
+
+  const handleSignOut = async () => {
+    if (isSigningOut) return;
+
+    setIsSigningOut(true);
+    setAuthError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/sign-out`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok && response.status !== 401) {
+        throw new Error("Sign out failed");
+      }
+
+      setUser(null);
+      setAccountMenuOpen(false);
+      setMobileMenuOpen(false);
+    } catch {
+      setAuthError("Unable to sign out. Please try again.");
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const displayName = user ? getDisplayName(user) : "";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border-subtle bg-background/85 backdrop-blur-md transition-all">
-      <Container size="xl" className="h-20 flex items-center justify-between">
-        {/* Brand Logo */}
+    <header className="sticky top-0 z-50 w-full border-b border-border-subtle bg-background/85 backdrop-blur-xl transition-colors duration-200 supports-[backdrop-filter]:bg-background/75">
+      <Container
+        size="xl"
+        className="flex h-16 items-center justify-between gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-4"
+      >
+        {/* Brand */}
         <Link
           href="/"
-          className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-lg p-1"
+          aria-label="StudioSpace home"
+          className="group flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background md:justify-self-start"
         >
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border-accent flex items-center justify-center transition-transform group-hover:scale-105 shadow-[0_0_20px_var(--color-accent-glow)]">
-            <span className="font-extrabold text-accent text-xl tracking-tighter">S</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight text-foreground flex items-center gap-1">
-              Studio<span className="text-accent">Space</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-accent bg-gradient-to-br from-accent/20 to-accent/5 shadow-[0_0_18px_var(--color-accent-glow)] transition-transform duration-200 group-hover:scale-105">
+            <span className="text-lg font-extrabold tracking-tighter text-accent">
+              S
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-foreground-subtle -mt-1 font-medium">
-              Creative Marketplace
-            </span>
-          </div>
+          </span>
+          <span className="text-[17px] font-bold tracking-tight text-foreground">
+            Studio<span className="text-accent">Space</span>
+          </span>
         </Link>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop navigation */}
         <nav
-          className="hidden md:flex items-center gap-8 text-sm font-medium text-foreground-secondary"
-          aria-label="Main Navigation"
+          aria-label="Main navigation"
+          className="hidden items-center justify-center gap-1 md:flex md:justify-self-center"
         >
-          <Link
-            href="#explore"
-            className="hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-md px-1 py-0.5"
-          >
-            Explore Spaces
-          </Link>
-          <Link
-            href="#categories"
-            className="hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-md px-1 py-0.5"
-          >
-            Categories
-          </Link>
-          <Link
-            href="#how-it-works"
-            className="hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-md px-1 py-0.5"
-          >
-            How It Works
-          </Link>
-          <Link
-            href="#host"
-            className="flex items-center gap-2 hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-md px-1 py-0.5"
-          >
-            <span>List Your Space</span>
-            <Badge variant="accent" size="sm">
-              Host
-            </Badge>
-          </Link>
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:bg-surface/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4">
-          <Button variant="ghost" size="sm" href="#signin">
-            Sign In
-          </Button>
-          <Button variant="primary" size="sm" href="#explore">
-            Get Started
-          </Button>
-        </div>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 md:justify-self-end">
+          <ThemeToggle />
 
-        {/* Mobile Hamburger Toggle Button */}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 rounded-lg text-foreground-secondary hover:text-foreground hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          aria-expanded={mobileMenuOpen}
-          aria-label="Toggle navigation menu"
-        >
-          {mobileMenuOpen ? (
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
+          <span
+            className="hidden h-5 w-px bg-border-subtle md:block"
+            aria-hidden="true"
+          />
+
+          <div className="hidden md:block">
+            {isSessionLoading ? (
+              <div
+                className="h-9 w-24 animate-pulse rounded-lg border border-border-subtle bg-surface/70"
+                aria-hidden="true"
               />
-            </svg>
-          ) : (
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          )}
-        </button>
+            ) : user ? (
+              <div className="relative" ref={accountMenuRef}>
+                <button
+                  ref={accountButtonRef}
+                  type="button"
+                  onClick={() => {
+                    setAccountMenuOpen((isOpen) => !isOpen);
+                    setAuthError(null);
+                  }}
+                  aria-expanded={accountMenuOpen}
+                  aria-haspopup="true"
+                  aria-controls="account-menu"
+                  className="flex h-9 items-center gap-2 rounded-lg border border-border-subtle bg-surface/60 py-1 pl-1 pr-2.5 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:border-border-medium hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-[11px] font-bold uppercase tracking-wide text-accent">
+                    {getInitials(user)}
+                  </span>
+                  <span className="hidden max-w-[9rem] truncate lg:block">
+                    {displayName}
+                  </span>
+                  <svg
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      accountMenuOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {accountMenuOpen && (
+                  <div
+                    id="account-menu"
+                    className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-border-medium bg-surface p-1.5 shadow-2xl shadow-black/20"
+                  >
+                    <div className="border-b border-border-subtle px-3 py-2.5">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {displayName}
+                      </p>
+                      {user.email && (
+                        <p className="mt-0.5 truncate text-xs text-foreground-muted">
+                          {user.email}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={isSigningOut}
+                      className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.75}
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      {isSigningOut ? "Signing out..." : "Sign out"}
+                    </button>
+
+                    {authError && (
+                      <p
+                        role="alert"
+                        className="px-3 pb-2 pt-1 text-xs text-red-500"
+                      >
+                        {authError}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                href="#signin"
+                className="h-9 rounded-lg px-4"
+              >
+                Sign In
+              </Button>
+            )}
+          </div>
+
+          {/* Mobile menu toggle */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle bg-surface/60 text-foreground-secondary transition-colors duration-200 hover:border-border-medium hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background md:hidden"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
+            aria-label={
+              mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+          >
+            {mobileMenuOpen ? (
+              <svg
+                className="h-[18px] w-[18px]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.75}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="h-[18px] w-[18px]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.75}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
       </Container>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border-medium bg-background-secondary/95 backdrop-blur-xl px-6 py-6 space-y-4 animate-in slide-in-from-top-4 duration-200">
-          <nav className="flex flex-col space-y-3 text-base font-medium">
-            <Link
-              href="#explore"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-foreground hover:bg-surface-elevated transition-colors"
-            >
-              Explore Spaces
-            </Link>
-            <Link
-              href="#categories"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-foreground hover:bg-surface-elevated transition-colors"
-            >
-              Categories
-            </Link>
-            <Link
-              href="#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-foreground hover:bg-surface-elevated transition-colors"
-            >
-              How It Works
-            </Link>
-            <Link
-              href="#host"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg text-foreground hover:bg-surface-elevated flex items-center justify-between"
-            >
-              <span>List Your Space</span>
-              <Badge variant="accent" size="sm">
-                Host
-              </Badge>
-            </Link>
-          </nav>
-          <div className="pt-4 border-t border-border-subtle flex flex-col gap-3">
-            <Button
-              variant="outline"
-              size="md"
-              href="#signin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full justify-center"
-            >
-              Sign In
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              href="#explore"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full justify-center"
-            >
-              Get Started
-            </Button>
-          </div>
+        <div
+          id="mobile-navigation"
+          className="border-t border-border-subtle bg-background/95 backdrop-blur-xl md:hidden"
+        >
+          <Container size="xl" className="py-4">
+            <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMobileMenu}
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="mt-3 space-y-3 border-t border-border-subtle pt-3">
+              {isSessionLoading ? (
+                <div
+                  className="h-10 animate-pulse rounded-lg border border-border-subtle bg-surface/70"
+                  aria-hidden="true"
+                />
+              ) : user ? (
+                <>
+                  <div className="flex items-center gap-3 px-1">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xs font-bold uppercase tracking-wide text-accent">
+                      {getInitials(user)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {displayName}
+                      </p>
+                      {user.email && (
+                        <p className="truncate text-xs text-foreground-muted">
+                          {user.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    onClick={handleSignOut}
+                    isLoading={isSigningOut}
+                    className="w-full justify-center"
+                  >
+                    Sign out
+                  </Button>
+
+                  {authError && (
+                    <p role="alert" className="text-xs text-red-500">
+                      {authError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  href="#signin"
+                  onClick={closeMobileMenu}
+                  className="w-full justify-center"
+                >
+                  Sign In
+                </Button>
+              )}
+            </div>
+          </Container>
         </div>
       )}
     </header>

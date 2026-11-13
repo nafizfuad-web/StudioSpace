@@ -30,22 +30,22 @@ export const SearchFilter: React.FC = () => {
             onChange={(e) => setActivity(e.target.value)}
             className="bg-transparent text-foreground text-sm font-medium focus:outline-none cursor-pointer mt-0.5"
           >
-            <option value="photo-shoot" className="bg-[#14161f] text-foreground">
+            <option value="photo-shoot" className="bg-surface text-foreground">
               Photo Shoot
             </option>
-            <option value="film-production" className="bg-[#14161f] text-foreground">
+            <option value="film-production" className="bg-surface text-foreground">
               Film & Video Production
             </option>
-            <option value="music-video" className="bg-[#14161f] text-foreground">
+            <option value="music-video" className="bg-surface text-foreground">
               Music Video Shoot
             </option>
-            <option value="soundstage" className="bg-[#14161f] text-foreground">
+            <option value="soundstage" className="bg-surface text-foreground">
               Soundstage & Audio
             </option>
-            <option value="podcast" className="bg-[#14161f] text-foreground">
+            <option value="podcast" className="bg-surface text-foreground">
               Podcast Recording
             </option>
-            <option value="workshop" className="bg-[#14161f] text-foreground">
+            <option value="workshop" className="bg-surface text-foreground">
               Creative Workshop
             </option>
           </select>
@@ -65,22 +65,22 @@ export const SearchFilter: React.FC = () => {
             onChange={(e) => setCity(e.target.value)}
             className="bg-transparent text-foreground text-sm font-medium focus:outline-none cursor-pointer mt-0.5"
           >
-            <option value="los-angeles" className="bg-[#14161f] text-foreground">
+            <option value="los-angeles" className="bg-surface text-foreground">
               Los Angeles, CA
             </option>
-            <option value="new-york" className="bg-[#14161f] text-foreground">
+            <option value="new-york" className="bg-surface text-foreground">
               New York, NY
             </option>
-            <option value="london" className="bg-[#14161f] text-foreground">
+            <option value="london" className="bg-surface text-foreground">
               London, UK
             </option>
-            <option value="atlanta" className="bg-[#14161f] text-foreground">
+            <option value="atlanta" className="bg-surface text-foreground">
               Atlanta, GA
             </option>
-            <option value="toronto" className="bg-[#14161f] text-foreground">
+            <option value="toronto" className="bg-surface text-foreground">
               Toronto, ON
             </option>
-            <option value="berlin" className="bg-[#14161f] text-foreground">
+            <option value="berlin" className="bg-surface text-foreground">
               Berlin, DE
             </option>
           </select>
@@ -100,16 +100,16 @@ export const SearchFilter: React.FC = () => {
             onChange={(e) => setAttendees(e.target.value)}
             className="bg-transparent text-foreground text-sm font-medium focus:outline-none cursor-pointer mt-0.5"
           >
-            <option value="1-5" className="bg-[#14161f] text-foreground">
+            <option value="1-5" className="bg-surface text-foreground">
               1 – 5 people
             </option>
-            <option value="1-10" className="bg-[#14161f] text-foreground">
+            <option value="1-10" className="bg-surface text-foreground">
               6 – 15 people
             </option>
-            <option value="15-30" className="bg-[#14161f] text-foreground">
+            <option value="15-30" className="bg-surface text-foreground">
               16 – 30 people
             </option>
-            <option value="30+" className="bg-[#14161f] text-foreground">
+            <option value="30+" className="bg-surface text-foreground">
               30+ people (Large Crew)
             </option>
           </select>
@@ -124,7 +124,7 @@ export const SearchFilter: React.FC = () => {
             className="w-full h-full min-h-[52px] font-semibold text-sm justify-center rounded-xl"
             leftIcon={
               <svg
-                className="w-4 h-4 mr-1 text-[#090a0f]"
+                className="w-4 h-4 mr-1 text-accent-contrast"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

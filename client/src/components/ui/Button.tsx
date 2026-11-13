@@ -16,7 +16,7 @@ export interface ButtonProps
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent text-[#090a0f] font-semibold hover:bg-accent-hover shadow-[0_0_16px_var(--color-accent-glow)] hover:shadow-[0_0_24px_var(--color-accent-glow)] border border-transparent",
+    "bg-accent text-accent-contrast font-semibold hover:bg-accent-hover shadow-[0_0_16px_var(--color-accent-glow)] hover:shadow-[0_0_24px_var(--color-accent-glow)] border border-transparent",
   secondary:
     "bg-surface-elevated text-foreground border border-border-subtle hover:bg-surface-hover hover:border-border-medium",
   outline:
@@ -44,6 +44,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       className = "",
       disabled,
       href,
+      onClick,
       children,
       ...props
     },
@@ -56,7 +57,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (href) {
       return (
-        <Link href={href} className={combinedClasses}>
+        <Link
+          href={href}
+          className={combinedClasses}
+          onClick={onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>}
+        >
           {leftIcon}
           <span>{children}</span>
           {rightIcon}
@@ -67,6 +72,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        onClick={onClick}
         disabled={disabled || isLoading}
         className={combinedClasses}
         {...props}

@@ -2,7 +2,7 @@
 // MongoDB Booking model definitions and collection helper.
 
 import { Collection, Db, ObjectId, IndexDescription } from "mongodb";
-import { getDb } from "../config/database";
+import { getDb } from "../config/database.js";
 
 export type BookingStatus =
   | "pending"

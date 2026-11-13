@@ -11,7 +11,7 @@ export const HostCTA: React.FC = () => {
       />
 
       <Container size="xl">
-        <div className="relative rounded-3xl bg-gradient-to-br from-surface-elevated via-surface to-[#0e1017] border border-border-medium p-8 sm:p-12 lg:p-16 shadow-2xl overflow-hidden">
+        <div className="relative rounded-3xl bg-gradient-to-br from-surface-elevated via-surface to-background-secondary border border-border-medium p-8 sm:p-12 lg:p-16 shadow-2xl overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6">
@@ -73,7 +73,7 @@ export const HostCTA: React.FC = () => {
 
             {/* Right Earnings Highlight Card */}
             <div className="lg:col-span-5">
-              <div className="p-8 rounded-2xl bg-[#090a0f]/90 border border-border-accent shadow-2xl backdrop-blur-xl space-y-6">
+              <div className="p-8 rounded-2xl bg-background/90 border border-border-accent shadow-2xl backdrop-blur-xl space-y-6">
                 <div className="space-y-1">
                   <span className="text-xs font-mono uppercase tracking-wider text-accent font-semibold">
                     Estimated Host Earnings

@@ -113,7 +113,7 @@ export const CategoryGrid: React.FC = () => {
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
                 {/* Gradient Overlays for Readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#090a0f] via-[#090a0f]/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-image-overlay via-image-overlay/60 to-transparent" />
               </div>
 
               {/* Card Content Overlay */}
@@ -130,7 +130,7 @@ export const CategoryGrid: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-foreground group-hover:text-accent transition-colors flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white group-hover:text-accent-light transition-colors flex items-center justify-between">
                     <span>{cat.name}</span>
                     <svg
                       className="w-5 h-5 text-accent opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
@@ -146,7 +146,7 @@ export const CategoryGrid: React.FC = () => {
                       />
                     </svg>
                   </h3>
-                  <p className="text-xs sm:text-sm text-foreground-muted line-clamp-2">
+                  <p className="text-xs sm:text-sm text-white/75 line-clamp-2">
                     {cat.description}
                   </p>
                 </div>

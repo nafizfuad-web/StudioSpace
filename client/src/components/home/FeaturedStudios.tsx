@@ -147,7 +147,7 @@ export const FeaturedStudios: React.FC = () => {
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   activeTab === tab
-                    ? "bg-accent text-[#090a0f] shadow-[0_0_15px_var(--color-accent-glow)]"
+                    ? "bg-accent text-accent-contrast shadow-[0_0_15px_var(--color-accent-glow)]"
                     : "bg-surface border border-border-subtle text-foreground-muted hover:text-foreground hover:bg-surface-elevated"
                 }`}
               >
@@ -173,7 +173,7 @@ export const FeaturedStudios: React.FC = () => {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#14161f] via-transparent to-black/30" />
+                <div className="absolute inset-0 bg-gradient-to-t from-image-overlay via-transparent to-image-overlay/30" />
 
                 {/* Top Badges */}
                 <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -196,7 +196,7 @@ export const FeaturedStudios: React.FC = () => {
                     e.preventDefault();
                     toggleFavorite(studio.id);
                   }}
-                  className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground hover:scale-110 active:scale-95 transition-all"
+                  className="absolute top-3 right-3 h-8 w-8 rounded-full bg-image-overlay/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground hover:scale-110 active:scale-95 transition-all"
                   aria-label="Add to favorites"
                 >
                   <svg
@@ -218,13 +218,13 @@ export const FeaturedStudios: React.FC = () => {
                 </button>
 
                 {/* Bottom Meta Overlay */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-foreground-secondary">
-                  <span className="flex items-center gap-1 font-medium bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white/80">
+                  <span className="flex items-center gap-1 font-medium bg-image-overlay/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
                     <span className="text-amber-400">★</span>
                     <strong className="text-white">{studio.rating}</strong>
-                    <span className="text-foreground-muted">({studio.reviewsCount})</span>
+                    <span className="text-white/70">({studio.reviewsCount})</span>
                   </span>
-                  <span className="font-mono text-white/90 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
+                  <span className="font-mono text-white/90 bg-image-overlay/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
                     {studio.sqFt} sq ft • max {studio.capacity}
                   </span>
                 </div>
