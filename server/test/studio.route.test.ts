@@ -5,6 +5,7 @@ import { ObjectId, type Collection } from "mongodb";
 import { createRequireAuth } from "../src/middleware/require-auth.middleware.js";
 import { createStudioRouter } from "../src/routes/studio.route.js";
 import type { StudioDocument } from "../src/models/studio.model.js";
+import type { UserDocument } from "../src/models/user.model.js";
 import { withServer } from "./helpers.js";
 
 const OWNER_ID = "64f1a2b3c4d5e6f7890a1b2c";
@@ -98,7 +99,10 @@ function authHeaders(userId: string): Record<string, string> {
   };
 }
 
-function createTestApp(collection: Collection<StudioDocument>) {
+function createTestApp(
+  collection: Collection<StudioDocument>,
+  userCollection?: Collection<UserDocument>
+) {
   const app = express();
   app.use(express.json());
 
@@ -120,6 +124,9 @@ function createTestApp(collection: Collection<StudioDocument>) {
     createStudioRouter({
       requireAuth,
       getCollection: () => collection,
+      getUserCollection: userCollection
+        ? () => userCollection
+        : undefined,
     })
   );
 
@@ -152,11 +159,58 @@ test("public GET /api/studios/:id remains accessible without a session", async (
     const body = (await response.json()) as {
       success: boolean;
       studio: { _id: string; title: string };
+      host: unknown;
     };
 
     assert.equal(response.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.studio._id, STUDIO_ID);
+    assert.equal(body.host, null);
+  });
+});
+
+test("public GET /api/studios/:id includes public host details only", async () => {
+  const joinedAt = new Date("2025-04-12T00:00:00.000Z");
+  const hostDoc = {
+    _id: new ObjectId(OWNER_ID),
+    name: "Seed Host",
+    email: "host@example.com",
+    emailVerified: true,
+    avatar: "https://images.unsplash.com/photo-host",
+    role: "host",
+    createdAt: joinedAt,
+    updatedAt: joinedAt,
+  } as UserDocument;
+
+  const userCollection = {
+    findOne: async () => ({ ...hostDoc }),
+  } as unknown as Collection<UserDocument>;
+
+  const { collection } = createFakeCollection([makeStudio()]);
+
+  await withServer(createTestApp(collection, userCollection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/studios/${STUDIO_ID}`);
+    const body = (await response.json()) as {
+      success: boolean;
+      host: {
+        _id: string;
+        name: string;
+        avatar: string | null;
+        role?: string;
+        createdAt?: string;
+        email?: string;
+      } | null;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.ok(body.host);
+    assert.equal(body.host._id, OWNER_ID);
+    assert.equal(body.host.name, "Seed Host");
+    assert.equal(body.host.avatar, hostDoc.avatar);
+    assert.equal(body.host.role, "host");
+    assert.equal(body.host.createdAt, joinedAt.toISOString());
+    assert.equal(body.host.email, undefined);
   });
 });
 

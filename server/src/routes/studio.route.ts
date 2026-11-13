@@ -12,6 +12,10 @@ import {
   requireAuth,
 } from "../middleware/require-auth.middleware.js";
 import { createRequireStudioOwner } from "../middleware/studio-owner.middleware.js";
+import {
+  getUserCollection,
+  type UserDocument,
+} from "../models/user.model.js";
 
 /** The five allowed studio categories. */
 const VALID_CATEGORIES: StudioCategory[] = [
@@ -66,6 +70,17 @@ function findProtectedField(input: Record<string, unknown>): string | null {
 export interface StudioRouterDeps {
   requireAuth: RequestHandler;
   getCollection: () => Collection<StudioDocument>;
+  /** Optional user collection used to attach public host details. */
+  getUserCollection?: () => Collection<UserDocument>;
+}
+
+/** Public host fields returned with studio details (never email or secrets). */
+export interface PublicHost {
+  _id: string;
+  name: string;
+  avatar: string | null;
+  role?: string;
+  createdAt?: Date;
 }
 
 /**
@@ -79,6 +94,7 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
   const router = Router();
   const requireStudioOwner = createRequireStudioOwner(deps.getCollection);
   const getCollection = deps.getCollection;
+  const getUser = deps.getUserCollection;
 
   /**
    * GET /studios
@@ -132,9 +148,47 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
         return;
       }
 
+      // --- Attach public host details when a user lookup is available ---
+      let host: PublicHost | null = null;
+
+      if (getUser) {
+        try {
+          const hostDoc = await getUser().findOne(
+            { _id: studio.hostId },
+            {
+              projection: {
+                name: 1,
+                avatar: 1,
+                image: 1,
+                role: 1,
+                createdAt: 1,
+              },
+            }
+          );
+
+          if (hostDoc) {
+            host = {
+              _id: String(hostDoc._id),
+              name: hostDoc.name?.trim() || "StudioSpace Host",
+              avatar: hostDoc.avatar ?? hostDoc.image ?? null,
+              role: hostDoc.role,
+              createdAt: hostDoc.createdAt,
+            };
+          }
+        } catch (hostErr) {
+          // Host details are supplementary; a lookup failure must not hide the
+          // studio itself.
+          console.error(
+            "[StudioRoute] Failed to fetch studio host details:",
+            hostErr
+          );
+        }
+      }
+
       res.status(200).json({
         success: true,
         studio,
+        host,
       });
     } catch (err) {
       console.error("[StudioRoute] Failed to fetch studio by ID:", err);
@@ -584,4 +638,5 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
 export default createStudioRouter({
   requireAuth,
   getCollection: getStudioCollection,
+  getUserCollection,
 });

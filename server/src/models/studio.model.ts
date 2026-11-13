@@ -21,6 +21,20 @@ export interface Address {
   zip?: string;
 }
 
+/**
+ * Public booking context attached to a studio listing. This describes the
+ * host's booking terms; it is not a booking transaction.
+ */
+export interface StudioBookingContext {
+  minimumHours: number;
+  maximumHours?: number;
+  leadTimeDays: number;
+  cancellationPolicy: string;
+  instantBook: boolean;
+  availability: string;
+  depositPercentage: number;
+}
+
 export interface StudioDocument {
   _id: ObjectId;
   title: string;
@@ -31,6 +45,7 @@ export interface StudioDocument {
   capacity: number; // number of people, positive integer
   features?: string[]; // e.g., ["power", "soundproof", "natural-light"]
   images?: string[]; // URLs to images
+  booking?: StudioBookingContext;
   hostId: ObjectId; // reference to a User document
   status: StudioStatus;
   createdAt: Date;

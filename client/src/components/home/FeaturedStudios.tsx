@@ -1,134 +1,78 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Container, SectionHeading, Badge, Button } from "@/components/ui";
+import {
+  STUDIO_CATEGORY_FILTERS,
+  fetchStudios,
+  formatLocation,
+  getCategoryLabel,
+  getStudioCoverImage,
+  type Studio,
+  type StudioCategory,
+} from "@/lib/studios";
 
-interface Studio {
-  id: string;
-  title: string;
-  category: string;
-  location: string;
-  pricePerHour: number;
-  rating: number;
-  reviewsCount: number;
-  sqFt: number;
-  capacity: number;
-  imageUrl: string;
-  badge?: string;
-  instantBook?: boolean;
-}
-
-const studios: Studio[] = [
-  {
-    id: "studio-1",
-    title: "Apex Daylight Infinity Cyclorama Studio",
-    category: "Photo & Cyc",
-    location: "Downtown Arts District, Los Angeles",
-    pricePerHour: 145,
-    rating: 4.98,
-    reviewsCount: 112,
-    sqFt: 3500,
-    capacity: 25,
-    imageUrl:
-      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=800&q=80",
-    badge: "Superhost",
-    instantBook: true,
-  },
-  {
-    id: "studio-2",
-    title: "The Industrial Brick Warehouse & Soundstage",
-    category: "Soundstages",
-    location: "Greenpoint, Brooklyn, NY",
-    pricePerHour: 220,
-    rating: 4.95,
-    reviewsCount: 88,
-    sqFt: 5200,
-    capacity: 50,
-    imageUrl:
-      "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80",
-    badge: "Rare Find",
-    instantBook: true,
-  },
-  {
-    id: "studio-3",
-    title: "Skyline Penthouse & Glass Daylight Loft",
-    category: "Lofts",
-    location: "SoHo, Manhattan, NY",
-    pricePerHour: 195,
-    rating: 4.99,
-    reviewsCount: 146,
-    sqFt: 2800,
-    capacity: 20,
-    imageUrl:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-    badge: "Top Rated",
-    instantBook: false,
-  },
-  {
-    id: "studio-4",
-    title: "Neon Sound & Acoustic Production Stage",
-    category: "Soundstages",
-    location: "West Hollywood, Los Angeles",
-    pricePerHour: 175,
-    rating: 4.92,
-    reviewsCount: 64,
-    sqFt: 4000,
-    capacity: 35,
-    imageUrl:
-      "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80",
-    badge: "Audio Ready",
-    instantBook: true,
-  },
-  {
-    id: "studio-5",
-    title: "The Minimalist Concrete Film Pavilion",
-    category: "Warehouses",
-    location: "Culver City, Los Angeles",
-    pricePerHour: 310,
-    rating: 5.0,
-    reviewsCount: 42,
-    sqFt: 7500,
-    capacity: 70,
-    imageUrl:
-      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80",
-    badge: "Drive-In Ready",
-    instantBook: false,
-  },
-  {
-    id: "studio-6",
-    title: "360° Skyline Rooftop & Sunset Deck",
-    category: "Lofts",
-    location: "Shoreditch, London, UK",
-    pricePerHour: 160,
-    rating: 4.96,
-    reviewsCount: 95,
-    sqFt: 3100,
-    capacity: 30,
-    imageUrl:
-      "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-    badge: "Golden Hour",
-    instantBook: true,
-  },
-];
-
-const filterTabs = ["All Studios", "Photo & Cyc", "Soundstages", "Lofts", "Warehouses"];
+type ActiveFilter = "all" | StudioCategory;
 
 export const FeaturedStudios: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("All Studios");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [studios, setStudios] = useState<Studio[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [requestKey, setRequestKey] = useState(0);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let isActive = true;
+
+    const loadStudios = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchStudios(controller.signal);
+        if (isActive) setStudios(data);
+      } catch (err) {
+        if (!isActive || controller.signal.aborted) return;
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load studios right now."
+        );
+      } finally {
+        if (isActive) setIsLoading(false);
+      }
+    };
+
+    void loadStudios();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [requestKey]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const filteredStudios =
-    activeTab === "All Studios"
-      ? studios
-      : studios.filter((s) => s.category.toLowerCase().includes(activeTab.toLowerCase().slice(0, 4)));
+  const filteredStudios = useMemo(
+    () =>
+      activeFilter === "all"
+        ? studios
+        : studios.filter((studio) => studio.category === activeFilter),
+    [activeFilter, studios]
+  );
 
   return (
-    <section id="explore" className="py-16 md:py-24 bg-background-secondary/60 border-y border-border-subtle">
+    <section
+      id="explore"
+      className="py-16 md:py-24 bg-background-secondary/60 border-y border-border-subtle"
+    >
       <Container size="xl" className="space-y-10">
         {/* Section Header & Filter Tabs */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -140,18 +84,19 @@ export const FeaturedStudios: React.FC = () => {
 
           {/* Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
-            {filterTabs.map((tab) => (
+            {STUDIO_CATEGORY_FILTERS.map((tab) => (
               <button
-                key={tab}
+                key={tab.value}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveFilter(tab.value)}
+                aria-pressed={activeFilter === tab.value}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  activeTab === tab
+                  activeFilter === tab.value
                     ? "bg-accent text-accent-contrast shadow-[0_0_15px_var(--color-accent-glow)]"
                     : "bg-surface border border-border-subtle text-foreground-muted hover:text-foreground hover:bg-surface-elevated"
                 }`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -159,103 +104,199 @@ export const FeaturedStudios: React.FC = () => {
 
         {/* Studio Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filteredStudios.map((studio) => (
-            <div
-              key={studio.id}
-              className="group rounded-2xl bg-surface border border-border-subtle hover:border-border-accent transition-all duration-300 overflow-hidden flex flex-col hover:shadow-[0_12px_32px_-8px_var(--color-accent-glow)]"
-            >
-              {/* Image Container with Badges */}
-              <div className="relative h-60 w-full overflow-hidden bg-surface-elevated">
-                <Image
-                  src={studio.imageUrl}
-                  alt={studio.title}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-image-overlay via-transparent to-image-overlay/30" />
-
-                {/* Top Badges */}
-                <div className="absolute top-3 left-3 flex items-center gap-2">
-                  {studio.badge && (
-                    <Badge variant="accent" size="sm">
-                      {studio.badge}
-                    </Badge>
-                  )}
-                  {studio.instantBook && (
-                    <Badge variant="success" size="sm" dot>
-                      Instant Book
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Favorite Heart Toggle */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleFavorite(studio.id);
-                  }}
-                  className="absolute top-3 right-3 h-8 w-8 rounded-full bg-image-overlay/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground hover:scale-110 active:scale-95 transition-all"
-                  aria-label="Add to favorites"
-                >
-                  <svg
-                    className={`h-4 w-4 transition-colors ${
-                      favorites[studio.id]
-                        ? "fill-red-500 text-red-500"
-                        : "fill-transparent text-white"
-                    }`}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </button>
-
-                {/* Bottom Meta Overlay */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white/80">
-                  <span className="flex items-center gap-1 font-medium bg-image-overlay/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
-                    <span className="text-amber-400">★</span>
-                    <strong className="text-white">{studio.rating}</strong>
-                    <span className="text-white/70">({studio.reviewsCount})</span>
-                  </span>
-                  <span className="font-mono text-white/90 bg-image-overlay/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
-                    {studio.sqFt} sq ft • max {studio.capacity}
-                  </span>
+          {isLoading &&
+            Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={`studio-skeleton-${index}`}
+                className="rounded-2xl bg-surface border border-border-subtle overflow-hidden"
+                aria-hidden="true"
+              >
+                <div className="h-60 w-full animate-pulse bg-surface-elevated" />
+                <div className="p-5 space-y-4">
+                  <div className="h-3 w-2/3 rounded-full bg-surface-elevated animate-pulse" />
+                  <div className="h-5 w-full rounded-full bg-surface-elevated animate-pulse" />
+                  <div className="pt-3 border-t border-border-subtle flex items-center justify-between">
+                    <div className="h-6 w-20 rounded-full bg-surface-elevated animate-pulse" />
+                    <div className="h-8 w-24 rounded-lg bg-surface-elevated animate-pulse" />
+                  </div>
                 </div>
               </div>
+            ))}
 
-              {/* Card Body */}
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-accent uppercase tracking-wider">
-                    {studio.location}
-                  </span>
-                  <h3 className="text-base font-bold text-foreground group-hover:text-accent transition-colors line-clamp-1">
-                    {studio.title}
-                  </h3>
-                </div>
+          {!isLoading && error && (
+            <div className="sm:col-span-2 lg:col-span-3 rounded-2xl border border-border-subtle bg-surface p-8 sm:p-10 text-center">
+              <h3 className="text-lg font-bold text-foreground">
+                We couldn&apos;t load the studios
+              </h3>
+              <p className="mt-2 text-sm text-foreground-muted">{error}</p>
+              <Button
+                variant="secondary"
+                size="md"
+                className="mt-5"
+                onClick={() => setRequestKey((key) => key + 1)}
+              >
+                Try again
+              </Button>
+            </div>
+          )}
 
-                <div className="pt-3 border-t border-border-subtle flex items-center justify-between">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold text-foreground tracking-tight">
-                      ${studio.pricePerHour}
-                    </span>
-                    <span className="text-xs text-foreground-muted">/ hr</span>
+          {!isLoading && !error && filteredStudios.length === 0 && (
+            <div className="sm:col-span-2 lg:col-span-3 rounded-2xl border border-border-subtle bg-surface p-8 sm:p-10 text-center">
+              <h3 className="text-lg font-bold text-foreground">
+                No studios in this category yet
+              </h3>
+              <p className="mt-2 text-sm text-foreground-muted">
+                Be the first to list a production-ready space on StudioSpace.
+              </p>
+              <Button
+                variant="secondary"
+                size="md"
+                className="mt-5"
+                href="/#host"
+              >
+                List your space
+              </Button>
+            </div>
+          )}
+
+          {!isLoading &&
+            !error &&
+            filteredStudios.map((studio) => {
+              const detailsHref = `/studios/${studio._id}`;
+              const coverImage = getStudioCoverImage(studio);
+              const categoryLabel = getCategoryLabel(studio.category);
+              const locationLabel = formatLocation(studio.location);
+
+              return (
+                <div
+                  key={studio._id}
+                  className="group rounded-2xl bg-surface border border-border-subtle hover:border-border-accent transition-all duration-300 overflow-hidden flex flex-col hover:shadow-[0_12px_32px_-8px_var(--color-accent-glow)]"
+                >
+                  {/* Image Container with Badges */}
+                  <div className="relative">
+                    <Link
+                      href={detailsHref}
+                      aria-label={`View details for ${studio.title}`}
+                      className="group/image relative block h-60 w-full overflow-hidden bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                    >
+                      <Image
+                        src={coverImage}
+                        alt={studio.title}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-image-overlay via-transparent to-image-overlay/30" />
+
+                      {/* Top Badges */}
+                      <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-2">
+                        <Badge variant="accent" size="sm">
+                          {categoryLabel}
+                        </Badge>
+                      </div>
+
+                      {/* Bottom Meta Overlay */}
+                      <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-center justify-between gap-3 text-xs text-white/80">
+                        <span className="flex min-w-0 items-center gap-1 font-medium bg-image-overlay/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
+                          <svg
+                            className="h-3.5 w-3.5 shrink-0 text-accent"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <span className="truncate">{locationLabel}</span>
+                        </span>
+                        <span className="shrink-0 font-mono text-white/90 bg-image-overlay/50 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
+                          max {studio.capacity}
+                        </span>
+                      </div>
+                    </Link>
+
+                    {/* Favorite Heart Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(studio._id)}
+                      className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-image-overlay/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground hover:scale-110 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      aria-label={
+                        favorites[studio._id]
+                          ? `Remove ${studio.title} from favorites`
+                          : `Add ${studio.title} to favorites`
+                      }
+                      aria-pressed={Boolean(favorites[studio._id])}
+                    >
+                      <svg
+                        className={`h-4 w-4 transition-colors ${
+                          favorites[studio._id]
+                            ? "fill-red-500 text-red-500"
+                            : "fill-transparent text-white"
+                        }`}
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                    </button>
                   </div>
 
-                  <Button variant="secondary" size="sm" href="#explore">
-                    View Details
-                  </Button>
+                  {/* Card Body */}
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="space-y-1.5">
+                      <span className="block truncate text-xs font-semibold text-accent uppercase tracking-wider">
+                        {locationLabel}
+                      </span>
+                      <h3 className="text-base font-bold text-foreground line-clamp-1">
+                        <Link
+                          href={detailsHref}
+                          className="transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
+                        >
+                          {studio.title}
+                        </Link>
+                      </h3>
+                    </div>
+
+                    <div className="pt-3 border-t border-border-subtle flex items-center justify-between">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-extrabold text-foreground tracking-tight">
+                          ${studio.pricePerHour}
+                        </span>
+                        <span className="text-xs text-foreground-muted">
+                          / hr
+                        </span>
+                      </div>
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        href={detailsHref}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
 
         {/* Load More Button */}
