@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Container } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { API_URL } from "@/lib/apiUrl";
+import { authClient } from "@/lib/authClient";
 
 const NAV_LINKS = [
   { label: "Explore", href: "/studios" },
@@ -12,17 +12,10 @@ const NAV_LINKS = [
   { label: "List Your Space", href: "/#host" },
 ] as const;
 
-interface SessionUser {
-  id: string;
+function getDisplayName(user: {
   name?: string | null;
   email?: string | null;
-}
-
-interface SessionResponse {
-  user?: SessionUser | null;
-}
-
-function getDisplayName(user: SessionUser): string {
+}): string {
   const name = user.name?.trim();
   if (name) return name;
 
@@ -30,7 +23,7 @@ function getDisplayName(user: SessionUser): string {
   return emailName || "Account";
 }
 
-function getInitials(user: SessionUser): string {
+function getInitials(user: { name?: string | null; email?: string | null }): string {
   const source = user.name?.trim() || user.email?.split("@")[0]?.trim() || "U";
   const parts = source.split(/\s+/).filter(Boolean);
 
@@ -43,52 +36,13 @@ function getInitials(user: SessionUser): string {
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const session = authClient.useSession();
+  const user = session.data?.user ?? null;
 
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Load the Better Auth session so the navbar can show the account option.
-  useEffect(() => {
-    const controller = new AbortController();
-    let isActive = true;
-
-    const loadSession = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/auth/get-session`, {
-          credentials: "include",
-          cache: "no-store",
-          signal: controller.signal,
-        });
-
-        if (!response.ok) return;
-
-        const data = (await response.json()) as SessionResponse | null;
-
-        if (isActive && data?.user?.id) {
-          setUser({
-            id: data.user.id,
-            name: data.user.name ?? null,
-            email: data.user.email ?? null,
-          });
-        }
-      } catch {
-        // Browsing does not depend on auth; ignore failed session checks.
-      } finally {
-        if (isActive) setIsSessionLoading(false);
-      }
-    };
-
-    void loadSession();
-
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, []);
 
   // Close the mobile drawer when the desktop breakpoint is reached.
   useEffect(() => {
@@ -154,18 +108,8 @@ export const Navbar: React.FC = () => {
     setAuthError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/sign-out`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok && response.status !== 401) {
-        throw new Error("Sign out failed");
-      }
-
-      setUser(null);
+      const result = await authClient.signOut();
+      if (result.error) throw new Error("Sign out failed");
       setAccountMenuOpen(false);
       setMobileMenuOpen(false);
     } catch {
@@ -227,7 +171,7 @@ export const Navbar: React.FC = () => {
           />
 
           <div className="hidden md:block">
-            {isSessionLoading ? (
+            {session.isPending ? (
               <div
                 className="h-9 w-24 animate-pulse rounded-lg border border-border-subtle bg-surface/70"
                 aria-hidden="true"
@@ -286,6 +230,14 @@ export const Navbar: React.FC = () => {
                       )}
                     </div>
 
+                    <Link
+                      href="/profile"
+                      onClick={() => setAccountMenuOpen(false)}
+                      className="flex w-full items-center rounded-lg px-3 py-2 text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      Profile
+                    </Link>
+
                     <button
                       type="button"
                       onClick={handleSignOut}
@@ -324,7 +276,7 @@ export const Navbar: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                href="#signin"
+                href="/signin"
                 className="h-9 rounded-lg px-4"
               >
                 Sign In
@@ -399,7 +351,7 @@ export const Navbar: React.FC = () => {
             </nav>
 
             <div className="mt-3 space-y-3 border-t border-border-subtle pt-3">
-              {isSessionLoading ? (
+              {session.isPending ? (
                 <div
                   className="h-10 animate-pulse rounded-lg border border-border-subtle bg-surface/70"
                   aria-hidden="true"
@@ -422,6 +374,14 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
+                  <Link
+                    href="/profile"
+                    onClick={closeMobileMenu}
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    Profile
+                  </Link>
+
                   <Button
                     variant="secondary"
                     size="md"
@@ -442,7 +402,7 @@ export const Navbar: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="md"
-                  href="#signin"
+                  href="/signin"
                   onClick={closeMobileMenu}
                   className="w-full justify-center"
                 >
