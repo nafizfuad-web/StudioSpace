@@ -11,7 +11,7 @@ const OBJECT_ID_RE = /^[0-9a-fA-F]{24}$/;
 
 /**
  * Build middleware that allows the request only when the authenticated user
- * owns the studio referenced by `req.params.id`.
+ * owns the studio referenced by `req.params.id`, or has the "admin" role.
  *
  * The collection getter is injectable so tests can use an in-memory store.
  */
@@ -42,6 +42,12 @@ export function createRequireStudioOwner(
           success: false,
           message: "Studio not found.",
         });
+        return;
+      }
+
+      // Administrators have permission to manage any studio
+      if (user.role === "admin") {
+        next();
         return;
       }
 

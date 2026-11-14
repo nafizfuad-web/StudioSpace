@@ -19,6 +19,8 @@ export interface BookingDocument {
   startAt: Date;
   endAt: Date;
   totalPrice: number; // positive
+  guestCount?: number;
+  notes?: string;
   status: BookingStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -57,6 +59,8 @@ export function createBookingDoc(params: {
   startAt: Date | string;
   endAt: Date | string;
   totalPrice: number;
+  guestCount?: number;
+  notes?: string;
   status?: BookingStatus;
 }): Omit<BookingDocument, "_id"> {
   const start = new Date(params.startAt);
@@ -79,6 +83,8 @@ export function createBookingDoc(params: {
     startAt: start,
     endAt: end,
     totalPrice: params.totalPrice,
+    guestCount: params.guestCount,
+    notes: params.notes?.trim() || undefined,
     status: params.status ?? "pending",
     createdAt: now,
     updatedAt: now,

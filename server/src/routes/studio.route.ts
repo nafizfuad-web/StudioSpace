@@ -15,7 +15,9 @@ import { createRequireStudioOwner } from "../middleware/studio-owner.middleware.
 import {
   getUserCollection,
   type UserDocument,
+  type UserRole,
 } from "../models/user.model.js";
+import { requireRole } from "../middleware/role.middleware.js";
 
 /** The five allowed studio categories. */
 const VALID_CATEGORIES: StudioCategory[] = [
@@ -69,6 +71,7 @@ function findProtectedField(input: Record<string, unknown>): string | null {
 
 export interface StudioRouterDeps {
   requireAuth: RequestHandler;
+  requireRole?: (...roles: UserRole[]) => RequestHandler;
   getCollection: () => Collection<StudioDocument>;
   /** Optional user collection used to attach public host details. */
   getUserCollection?: () => Collection<UserDocument>;
@@ -95,6 +98,7 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
   const requireStudioOwner = createRequireStudioOwner(deps.getCollection);
   const getCollection = deps.getCollection;
   const getUser = deps.getUserCollection;
+  const requireRoleMiddleware = deps.requireRole ?? requireRole;
 
   /**
    * GET /studios
@@ -444,6 +448,39 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
   );
 
   /**
+   * GET /owner/studios
+   * Retrieve all studio documents owned by the authenticated host, or all for admin.
+   */
+  router.get(
+    "/owner/studios",
+    deps.requireAuth,
+    requireRoleMiddleware("host", "admin"),
+    async (_req: Request, res: Response) => {
+      try {
+        const user = getAuthUser(res);
+        const filter =
+          user.role === "admin"
+            ? {}
+            : { hostId: new ObjectId(user.id) };
+
+        const studios = await getCollection().find(filter).toArray();
+
+        res.status(200).json({
+          success: true,
+          count: studios.length,
+          studios,
+        });
+      } catch (err) {
+        console.error("[StudioRoute] Failed to fetch owner studios:", err);
+        res.status(500).json({
+          success: false,
+          message: "Unable to retrieve owner studios. Please try again later.",
+        });
+      }
+    }
+  );
+
+  /**
    * POST /studios
    * Create a new studio document for the authenticated user.
    *
@@ -453,6 +490,7 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
   router.post(
     "/studios",
     deps.requireAuth,
+    requireRoleMiddleware("host", "admin"),
     async (req: Request, res: Response) => {
       try {
         const body: unknown = req.body;
@@ -637,6 +675,7 @@ export function createStudioRouter(deps: StudioRouterDeps): Router {
 
 export default createStudioRouter({
   requireAuth,
+  requireRole,
   getCollection: getStudioCollection,
   getUserCollection,
 });

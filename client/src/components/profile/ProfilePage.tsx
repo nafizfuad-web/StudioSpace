@@ -92,6 +92,14 @@ export function ProfilePage() {
                       {user.email}
                     </dd>
                   </div>
+                  <div className="pt-2">
+                    <Link
+                      href="/dashboard"
+                      className="inline-flex items-center justify-center rounded-xl bg-[#C2F800] px-4 py-2 text-xs font-bold text-black shadow-sm transition hover:bg-[#b0e200]"
+                    >
+                      Open Client Dashboard →
+                    </Link>
+                  </div>
                 </dl>
               </div>
             ) : (

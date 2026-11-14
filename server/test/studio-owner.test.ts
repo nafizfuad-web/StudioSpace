@@ -38,11 +38,15 @@ function collectionWith(studio: StudioDocument | null): Collection<StudioDocumen
   } as unknown as Collection<StudioDocument>;
 }
 
-function appFor(studio: StudioDocument | null, userId: string = OWNER_ID) {
+function appFor(
+  studio: StudioDocument | null,
+  userId: string = OWNER_ID,
+  role?: string
+) {
   const app = express();
 
   app.use((_req, res, next) => {
-    res.locals.authUser = { id: userId, email: "user@example.com" };
+    res.locals.authUser = { id: userId, email: "user@example.com", role };
     next();
   });
 
@@ -100,4 +104,16 @@ test("allows the authenticated owner to continue", async () => {
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { success: true });
   });
+});
+
+test("allows an administrator to modify a studio owned by another host", async () => {
+  await withServer(
+    appFor(makeStudio(OWNER_ID), OTHER_ID, "admin"),
+    async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/studios/${STUDIO_ID}`);
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { success: true });
+    }
+  );
 });

@@ -54,8 +54,16 @@ function createFakeCollection(initial: StudioDocument[] = []): {
   };
 
   const collection = {
-    find: () => ({
-      toArray: async () => docs.map((doc) => ({ ...doc })),
+    find: (filter?: { hostId?: ObjectId }) => ({
+      toArray: async () => {
+        let matched = docs;
+        if (filter?.hostId) {
+          matched = matched.filter(
+            (doc) => String(doc.hostId) === String(filter.hostId)
+          );
+        }
+        return matched.map((doc) => ({ ...doc }));
+      },
     }),
     findOne: async (filter: { _id?: ObjectId }) => {
       const doc = findDoc(filter);
@@ -92,11 +100,15 @@ function createFakeCollection(initial: StudioDocument[] = []): {
   return { collection, docs };
 }
 
-function authHeaders(userId: string): Record<string, string> {
-  return {
+function authHeaders(userId: string, role?: string): Record<string, string> {
+  const headers: Record<string, string> = {
     "content-type": "application/json",
     "x-test-user-id": userId,
   };
+  if (role) {
+    headers["x-test-user-role"] = role;
+  }
+  return headers;
 }
 
 function createTestApp(
@@ -112,10 +124,13 @@ function createTestApp(
 
     if (!id) return null;
 
+    const roleHeader = req.headers["x-test-user-role"];
+    const role = Array.isArray(roleHeader) ? roleHeader[0] : roleHeader;
+
     return {
       id,
       email: `${id}@example.com`,
-      role: "host",
+      role: role ?? "host",
     };
   });
 
@@ -474,5 +489,139 @@ test("PUT and DELETE reject an invalid studio ID with 400", async () => {
 
     assert.equal(putResponse.status, 400);
     assert.equal(deleteResponse.status, 400);
+  });
+});
+
+test("POST /api/studios returns 403 when authenticated as a renter", async () => {
+  const { collection, docs } = createFakeCollection();
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/studios`, {
+      method: "POST",
+      headers: authHeaders(OWNER_ID, "renter"),
+      body: JSON.stringify(VALID_CREATE_BODY),
+    });
+
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json(), {
+      success: false,
+      message: "You do not have permission to perform this action.",
+    });
+    assert.equal(docs.length, 0);
+  });
+});
+
+test("POST /api/studios creates the studio for an admin", async () => {
+  const { collection, docs } = createFakeCollection();
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/studios`, {
+      method: "POST",
+      headers: authHeaders(OWNER_ID, "admin"),
+      body: JSON.stringify(VALID_CREATE_BODY),
+    });
+
+    const body = (await response.json()) as {
+      success: boolean;
+      studio: { _id: string; hostId: string; title: string };
+    };
+
+    assert.equal(response.status, 201);
+    assert.equal(body.success, true);
+    assert.equal(body.studio.title, VALID_CREATE_BODY.title);
+    assert.equal(docs.length, 1);
+  });
+});
+
+test("PUT /api/studios/:id allows an admin to update a studio owned by another host", async () => {
+  const { collection, docs } = createFakeCollection([makeStudio()]);
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/studios/${STUDIO_ID}`, {
+      method: "PUT",
+      headers: authHeaders(OTHER_ID, "admin"),
+      body: JSON.stringify({ title: "Admin Modified Studio" }),
+    });
+
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { success: boolean; studio: { title: string } };
+    assert.equal(body.success, true);
+    assert.equal(body.studio.title, "Admin Modified Studio");
+    assert.equal(docs[0].title, "Admin Modified Studio");
+  });
+});
+
+test("DELETE /api/studios/:id allows an admin to delete a studio owned by another host", async () => {
+  const { collection, docs } = createFakeCollection([makeStudio()]);
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/studios/${STUDIO_ID}`, {
+      method: "DELETE",
+      headers: authHeaders(OTHER_ID, "admin"),
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      success: true,
+      message: "Studio deleted successfully.",
+    });
+    assert.equal(docs.length, 0);
+  });
+});
+
+test("GET /api/owner/studios returns 403 for a renter", async () => {
+  const { collection } = createFakeCollection([makeStudio()]);
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/owner/studios`, {
+      headers: authHeaders(OWNER_ID, "renter"),
+    });
+
+    assert.equal(response.status, 403);
+  });
+});
+
+test("GET /api/owner/studios returns only studios owned by the authenticated host", async () => {
+  const myStudio = makeStudio();
+  const otherStudio = {
+    ...makeStudio(),
+    _id: new ObjectId(MISSING_ID),
+    title: "Other Host Studio",
+    hostId: new ObjectId(OTHER_ID),
+  };
+  const { collection } = createFakeCollection([myStudio, otherStudio]);
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/owner/studios`, {
+      headers: authHeaders(OWNER_ID, "host"),
+    });
+
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { success: boolean; count: number; studios: Array<{ title: string }> };
+    assert.equal(body.success, true);
+    assert.equal(body.count, 1);
+    assert.equal(body.studios[0].title, "Seed Studio");
+  });
+});
+
+test("GET /api/owner/studios returns all studios for an admin", async () => {
+  const myStudio = makeStudio();
+  const otherStudio = {
+    ...makeStudio(),
+    _id: new ObjectId(MISSING_ID),
+    title: "Other Host Studio",
+    hostId: new ObjectId(OTHER_ID),
+  };
+  const { collection } = createFakeCollection([myStudio, otherStudio]);
+
+  await withServer(createTestApp(collection), async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/owner/studios`, {
+      headers: authHeaders(OWNER_ID, "admin"),
+    });
+
+    assert.equal(response.status, 200);
+    const body = (await response.json()) as { success: boolean; count: number };
+    assert.equal(body.success, true);
+    assert.equal(body.count, 2);
   });
 });

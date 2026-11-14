@@ -7,9 +7,10 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { authClient } from "@/lib/authClient";
 
 const NAV_LINKS = [
-  { label: "Explore", href: "/studios" },
-  { label: "Categories", href: "/#categories" },
-  { label: "List Your Space", href: "/#host" },
+  { label: "Explore", href: "/studios", requiresAuth: false },
+  { label: "My Bookings", href: "/dashboard/bookings", requiresAuth: true },
+  { label: "Categories", href: "/#categories", requiresAuth: false },
+  { label: "List Your Space", href: "/#host", requiresAuth: false },
 ] as const;
 
 function getDisplayName(user: {
@@ -150,15 +151,22 @@ export const Navbar: React.FC = () => {
           aria-label="Main navigation"
           className="hidden items-center justify-center gap-1 md:flex md:justify-self-center"
         >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:bg-surface/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const targetHref =
+              link.requiresAuth && !user
+                ? `/signin?next=${encodeURIComponent(link.href)}`
+                : link.href;
+
+            return (
+              <Link
+                key={link.label}
+                href={targetHref}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:bg-surface/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Actions */}
@@ -230,13 +238,36 @@ export const Navbar: React.FC = () => {
                       )}
                     </div>
 
-                    <Link
-                      href="/profile"
-                      onClick={() => setAccountMenuOpen(false)}
-                      className="flex w-full items-center rounded-lg px-3 py-2 text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    >
-                      Profile
-                    </Link>
+                    <div className="py-1">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex w-full items-center rounded-lg px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        Client Dashboard
+                      </Link>
+                      <Link
+                        href="/dashboard/bookings"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex w-full items-center rounded-lg px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        My Bookings
+                      </Link>
+                      <Link
+                        href="/dashboard/saved"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex w-full items-center rounded-lg px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        Saved Studios
+                      </Link>
+                      <Link
+                        href="/dashboard/profile"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex w-full items-center rounded-lg px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        My Profile
+                      </Link>
+                    </div>
 
                     <button
                       type="button"
@@ -338,16 +369,23 @@ export const Navbar: React.FC = () => {
         >
           <Container size="xl" className="py-4">
             <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeMobileMenu}
-                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {NAV_LINKS.map((link) => {
+                const targetHref =
+                  link.requiresAuth && !user
+                    ? `/signin?next=${encodeURIComponent(link.href)}`
+                    : link.href;
+
+                return (
+                  <Link
+                    key={link.label}
+                    href={targetHref}
+                    onClick={closeMobileMenu}
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground-secondary transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="mt-3 space-y-3 border-t border-border-subtle pt-3">
@@ -374,13 +412,29 @@ export const Navbar: React.FC = () => {
                     </div>
                   </div>
 
-                  <Link
-                    href="/profile"
-                    onClick={closeMobileMenu}
-                    className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  >
-                    Profile
-                  </Link>
+                  <div className="space-y-1 py-1">
+                    <Link
+                      href="/dashboard"
+                      onClick={closeMobileMenu}
+                      className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      Client Dashboard
+                    </Link>
+                    <Link
+                      href="/dashboard/bookings"
+                      onClick={closeMobileMenu}
+                      className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      My Bookings
+                    </Link>
+                    <Link
+                      href="/dashboard/saved"
+                      onClick={closeMobileMenu}
+                      className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      Saved Studios
+                    </Link>
+                  </div>
 
                   <Button
                     variant="secondary"

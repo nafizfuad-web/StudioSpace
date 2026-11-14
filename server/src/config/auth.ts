@@ -31,12 +31,25 @@ function getRequiredSecret(): string {
  * user IDs.
  */
 function buildAuth(db: Db) {
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
   return betterAuth({
     database: mongodbAdapter(db),
     baseURL:
       process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 5000}`,
     secret: getRequiredSecret(),
     trustedOrigins: [process.env.CLIENT_URL ?? "http://localhost:3000"],
+    ...(googleClientId && googleClientSecret
+      ? {
+          socialProviders: {
+            google: {
+              clientId: googleClientId,
+              clientSecret: googleClientSecret,
+            },
+          },
+        }
+      : {}),
     emailAndPassword: {
       enabled: true,
     },

@@ -12,6 +12,7 @@ import {
   type StudioHost,
 } from "@/lib/studios";
 import { StudioGallery } from "./StudioGallery";
+import { StudioBookingActions } from "./StudioBookingActions";
 
 interface StudioDetailsProps {
   params: Promise<{ id: string }>;
@@ -301,6 +302,9 @@ export async function StudioDetails({ params }: StudioDetailsProps) {
               </span>
               <span className="text-sm text-foreground-muted">/ hour</span>
             </div>
+
+            {/* TWO ACTION BUTTONS DIRECTLY BELOW HOURLY PRICE */}
+            <StudioBookingActions studio={studio} />
 
             <div className="mt-4 space-y-3 border-t border-border-subtle pt-4 text-sm">
               <div className="flex items-start justify-between gap-3">
