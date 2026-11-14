@@ -1,6 +1,6 @@
-export const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
-).replace(/\/+$/, "");
+import { API_URL } from "./apiUrl";
+
+export { API_URL };
 
 /**
  * Image used when a studio has not uploaded any photos yet. Keeping a local
@@ -179,9 +179,28 @@ async function readErrorMessage(
   }
 }
 
+/**
+ * Turn a browser-level network failure into an actionable message. Without
+ * this, connection and CORS failures surface as the bare "Failed to fetch".
+ */
+async function fetchApi(
+  input: string,
+  init: RequestInit
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+
+    throw new Error(
+      "The StudioSpace API could not be reached. Make sure the server is running, then try again."
+    );
+  }
+}
+
 /** Fetch every studio listed on the marketplace. */
 export async function fetchStudios(signal?: AbortSignal): Promise<Studio[]> {
-  const response = await fetch(`${API_URL}/api/studios`, {
+  const response = await fetchApi(`${API_URL}/api/studios`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
     signal,
@@ -212,7 +231,7 @@ export async function fetchStudios(signal?: AbortSignal): Promise<Studio[]> {
 export async function fetchStudio(
   id: string
 ): Promise<{ studio: Studio; host: StudioHost | null } | null> {
-  const response = await fetch(
+  const response = await fetchApi(
     `${API_URL}/api/studios/${encodeURIComponent(id)}`,
     {
       cache: "no-store",

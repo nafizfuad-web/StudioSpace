@@ -4,10 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Container } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-
-const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"
-).replace(/\/+$/, "");
+import { API_URL } from "@/lib/apiUrl";
 
 const NAV_LINKS = [
   { label: "Explore", href: "/studios" },
