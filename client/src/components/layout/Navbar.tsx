@@ -10,7 +10,7 @@ const API_URL = (
 ).replace(/\/+$/, "");
 
 const NAV_LINKS = [
-  { label: "Explore", href: "/#explore" },
+  { label: "Explore", href: "/studios" },
   { label: "Categories", href: "/#categories" },
   { label: "List Your Space", href: "/#host" },
 ] as const;

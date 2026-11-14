@@ -299,10 +299,10 @@ export const FeaturedStudios: React.FC = () => {
             })}
         </div>
 
-        {/* Load More Button */}
+        {/* Browse the full catalogue */}
         <div className="pt-4 text-center">
-          <Button variant="outline" size="lg" href="#explore" className="px-8">
-            Browse All 10,000+ Studios
+          <Button variant="outline" size="lg" href="/studios" className="px-8">
+            Browse the full catalogue
           </Button>
         </div>
       </Container>

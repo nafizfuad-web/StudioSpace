@@ -20,7 +20,7 @@ export default function StudioNotFound() {
         </p>
 
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button variant="primary" size="md" href="/#explore">
+          <Button variant="primary" size="md" href="/studios">
             Browse studios
           </Button>
           <Button variant="secondary" size="md" href="/">

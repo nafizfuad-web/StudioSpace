@@ -76,10 +76,10 @@ export const CategoryGrid: React.FC = () => {
             subtitle="Book tailored stages equipped with the exact power, acoustics, lighting grids, and backdrops your project demands."
           />
           <Link
-            href="#explore"
+            href="/studios"
             className="text-sm font-semibold text-accent hover:text-accent-light flex items-center gap-1.5 transition-colors self-start md:self-auto"
           >
-            <span>View All 24 Categories</span>
+            <span>Browse all studios</span>
             <svg
               className="w-4 h-4"
               fill="none"

@@ -46,7 +46,7 @@ export default function StudioDetailsError({
           <Button variant="primary" size="md" onClick={() => retry()}>
             Try again
           </Button>
-          <Button variant="secondary" size="md" href="/#explore">
+          <Button variant="secondary" size="md" href="/studios">
             Back to studios
           </Button>
         </div>

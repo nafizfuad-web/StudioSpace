@@ -76,27 +76,42 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs sm:text-sm">
               <li>
-                <Link href="#explore" className="hover:text-accent transition-colors">
+                <Link
+                  href="/studios?category=photography"
+                  className="hover:text-accent transition-colors"
+                >
                   Photo Studios
                 </Link>
               </li>
               <li>
-                <Link href="#explore" className="hover:text-accent transition-colors">
+                <Link
+                  href="/studios?category=film"
+                  className="hover:text-accent transition-colors"
+                >
                   Film Soundstages
                 </Link>
               </li>
               <li>
-                <Link href="#explore" className="hover:text-accent transition-colors">
+                <Link
+                  href="/studios?category=photography&facilities=cyclorama"
+                  className="hover:text-accent transition-colors"
+                >
                   Cyclorama Stages
                 </Link>
               </li>
               <li>
-                <Link href="#explore" className="hover:text-accent transition-colors">
+                <Link
+                  href="/studios?category=photography&facilities=natural-light"
+                  className="hover:text-accent transition-colors"
+                >
                   Daylight Lofts
                 </Link>
               </li>
               <li>
-                <Link href="#explore" className="hover:text-accent transition-colors">
+                <Link
+                  href="/studios?category=podcast"
+                  className="hover:text-accent transition-colors"
+                >
                   Podcast Lounges
                 </Link>
               </li>

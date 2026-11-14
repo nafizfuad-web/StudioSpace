@@ -1,57 +1,81 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { useDateInputMin } from "@/hooks/useDateInputMin";
+import { STUDIO_CATEGORY_FILTERS } from "@/lib/studios";
+import { STUDIO_CITY_OPTIONS } from "@/lib/studioLocations";
+import type { StudioCategoryFilter } from "@/lib/studioSearch";
+
+const POPULAR_SEARCHES: Array<{ label: string; href: string }> = [
+  {
+    label: "Daylight lofts",
+    href: "/studios?category=photography&facilities=natural-light",
+  },
+  {
+    label: "Cyc wall stages",
+    href: "/studios?category=photography&facilities=cyclorama",
+  },
+  { label: "Podcast studios", href: "/studios?category=podcast" },
+  { label: "Film stages", href: "/studios?category=film" },
+];
 
 export const SearchFilter: React.FC = () => {
-  const [activity, setActivity] = useState("photo-shoot");
-  const [city, setCity] = useState("los-angeles");
-  const [attendees, setAttendees] = useState("1-10");
+  const router = useRouter();
+  const dateInputRef = useDateInputMin();
+  const [category, setCategory] = useState<StudioCategoryFilter>("all");
+  const [city, setCity] = useState("");
+  const [date, setDate] = useState("");
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const params = new URLSearchParams();
+    if (category !== "all") params.set("category", category);
+    if (city) params.set("location", city);
+    if (date) params.set("date", date);
+
+    const query = params.toString();
+    router.push(query ? `/studios?${query}` : "/studios");
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto rounded-2xl bg-surface/95 border border-border-medium p-3 sm:p-4 shadow-2xl backdrop-blur-xl">
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
+        onSubmit={handleSubmit}
         className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 items-center"
       >
-        {/* Activity Selection */}
+        {/* Studio Category */}
         <div className="flex flex-col px-3 py-2 rounded-xl bg-surface-elevated/70 border border-border-subtle focus-within:border-accent transition-colors">
           <label
             htmlFor="activity-select"
             className="text-[11px] font-semibold uppercase tracking-wider text-accent"
           >
-            Activity Type
+            Studio Type
           </label>
           <select
             id="activity-select"
-            value={activity}
-            onChange={(e) => setActivity(e.target.value)}
+            value={category}
+            onChange={(event) =>
+              setCategory(event.target.value as StudioCategoryFilter)
+            }
             className="bg-transparent text-foreground text-sm font-medium focus:outline-none cursor-pointer mt-0.5"
           >
-            <option value="photo-shoot" className="bg-surface text-foreground">
-              Photo Shoot
-            </option>
-            <option value="film-production" className="bg-surface text-foreground">
-              Film & Video Production
-            </option>
-            <option value="music-video" className="bg-surface text-foreground">
-              Music Video Shoot
-            </option>
-            <option value="soundstage" className="bg-surface text-foreground">
-              Soundstage & Audio
-            </option>
-            <option value="podcast" className="bg-surface text-foreground">
-              Podcast Recording
-            </option>
-            <option value="workshop" className="bg-surface text-foreground">
-              Creative Workshop
-            </option>
+            {STUDIO_CATEGORY_FILTERS.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                className="bg-surface text-foreground"
+              >
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
-        {/* Location Selection */}
+        {/* Location */}
         <div className="flex flex-col px-3 py-2 rounded-xl bg-surface-elevated/70 border border-border-subtle focus-within:border-accent transition-colors">
           <label
             htmlFor="location-select"
@@ -62,57 +86,40 @@ export const SearchFilter: React.FC = () => {
           <select
             id="location-select"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(event) => setCity(event.target.value)}
             className="bg-transparent text-foreground text-sm font-medium focus:outline-none cursor-pointer mt-0.5"
           >
-            <option value="los-angeles" className="bg-surface text-foreground">
-              Los Angeles, CA
+            <option value="" className="bg-surface text-foreground">
+              All locations
             </option>
-            <option value="new-york" className="bg-surface text-foreground">
-              New York, NY
-            </option>
-            <option value="london" className="bg-surface text-foreground">
-              London, UK
-            </option>
-            <option value="atlanta" className="bg-surface text-foreground">
-              Atlanta, GA
-            </option>
-            <option value="toronto" className="bg-surface text-foreground">
-              Toronto, ON
-            </option>
-            <option value="berlin" className="bg-surface text-foreground">
-              Berlin, DE
-            </option>
+            {STUDIO_CITY_OPTIONS.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                className="bg-surface text-foreground"
+              >
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
-        {/* Crew Size */}
+        {/* Date */}
         <div className="flex flex-col px-3 py-2 rounded-xl bg-surface-elevated/70 border border-border-subtle focus-within:border-accent transition-colors">
           <label
-            htmlFor="crew-select"
+            htmlFor="date-select"
             className="text-[11px] font-semibold uppercase tracking-wider text-accent"
           >
-            Cast & Crew
+            Date
           </label>
-          <select
-            id="crew-select"
-            value={attendees}
-            onChange={(e) => setAttendees(e.target.value)}
+          <input
+            ref={dateInputRef}
+            id="date-select"
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
             className="bg-transparent text-foreground text-sm font-medium focus:outline-none cursor-pointer mt-0.5"
-          >
-            <option value="1-5" className="bg-surface text-foreground">
-              1 – 5 people
-            </option>
-            <option value="1-10" className="bg-surface text-foreground">
-              6 – 15 people
-            </option>
-            <option value="15-30" className="bg-surface text-foreground">
-              16 – 30 people
-            </option>
-            <option value="30+" className="bg-surface text-foreground">
-              30+ people (Large Crew)
-            </option>
-          </select>
+          />
         </div>
 
         {/* Submit Button */}
@@ -128,6 +135,7 @@ export const SearchFilter: React.FC = () => {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -143,42 +151,22 @@ export const SearchFilter: React.FC = () => {
         </div>
       </form>
 
-      {/* Popular quick tags */}
+      {/* Popular quick links */}
       <div className="mt-3 pt-3 border-t border-border-subtle flex flex-wrap items-center gap-2 px-1 text-xs text-foreground-muted">
         <span className="text-[11px] uppercase tracking-wider font-semibold text-foreground-subtle">
           Popular:
         </span>
-        <button
-          type="button"
-          onClick={() => setActivity("photo-shoot")}
-          className="hover:text-accent transition-colors cursor-pointer"
-        >
-          Daylight Loft
-        </button>
-        <span>•</span>
-        <button
-          type="button"
-          onClick={() => setActivity("film-production")}
-          className="hover:text-accent transition-colors cursor-pointer"
-        >
-          Cyc Wall Stage
-        </button>
-        <span>•</span>
-        <button
-          type="button"
-          onClick={() => setActivity("soundstage")}
-          className="hover:text-accent transition-colors cursor-pointer"
-        >
-          Soundproof Stage
-        </button>
-        <span>•</span>
-        <button
-          type="button"
-          onClick={() => setActivity("podcast")}
-          className="hover:text-accent transition-colors cursor-pointer"
-        >
-          Podcast Studio
-        </button>
+        {POPULAR_SEARCHES.map((search, index) => (
+          <React.Fragment key={search.label}>
+            {index > 0 && <span aria-hidden="true">•</span>}
+            <Link
+              href={search.href}
+              className="hover:text-accent transition-colors"
+            >
+              {search.label}
+            </Link>
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );

@@ -181,7 +181,7 @@ export async function StudioDetails({ params }: StudioDetailsProps) {
   return (
     <Container size="xl" className="py-8 md:py-12">
       <Link
-        href="/#explore"
+        href="/studios"
         className="inline-flex items-center gap-2 rounded-lg text-sm font-medium text-foreground-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <svg
