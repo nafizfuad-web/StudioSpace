@@ -131,7 +131,7 @@ function BookingCard({ terms }: { terms: StudioBookingContext }) {
             {terms.availability}
           </dd>
         </div>
-        <div className="border-t border-border-subtle pt-3">
+        <div className="border-t border-border-subtle pt-4">
           <dt className="text-foreground-muted">Cancellation</dt>
           <dd className="mt-1 text-xs leading-relaxed text-foreground-secondary">
             {terms.cancellationPolicy}
@@ -249,7 +249,7 @@ export async function StudioDetails({ params }: StudioDetailsProps) {
             <h2 className="text-lg font-bold tracking-tight text-foreground">
               About this studio
             </h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground-secondary">
+            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-foreground-secondary">
               {studio.description}
             </p>
           </section>
@@ -285,7 +285,7 @@ export async function StudioDetails({ params }: StudioDetailsProps) {
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
+              <p className="mt-4 text-sm leading-relaxed text-foreground-muted">
                 This host has not listed specific features yet. Contact them for
                 equipment, power, and facility details.
               </p>
@@ -293,7 +293,7 @@ export async function StudioDetails({ params }: StudioDetailsProps) {
           </section>
         </div>
 
-        <aside className="space-y-6 lg:sticky lg:top-24">
+        <aside className="space-y-8 lg:sticky lg:top-24">
           <section className="rounded-2xl border border-border-medium bg-surface p-6 shadow-xl">
             <div className="flex items-baseline gap-1.5">
               <span className="text-3xl font-extrabold tracking-tight text-foreground">
@@ -302,28 +302,28 @@ export async function StudioDetails({ params }: StudioDetailsProps) {
               <span className="text-sm text-foreground-muted">/ hour</span>
             </div>
 
-            <div className="mt-5 space-y-3 border-t border-border-subtle pt-5 text-sm">
-              <div className="flex items-center justify-between gap-3">
+            <div className="mt-4 space-y-3 border-t border-border-subtle pt-4 text-sm">
+              <div className="flex items-start justify-between gap-3">
                 <span className="text-foreground-muted">Category</span>
-                <span className="text-right font-medium text-foreground">
+                <span className="max-w-[60%] text-right font-medium text-foreground">
                   {getCategoryLabel(studio.category)}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
                 <span className="text-foreground-muted">Capacity</span>
-                <span className="text-right font-medium text-foreground">
+                <span className="max-w-[60%] text-right font-medium text-foreground">
                   Up to {studio.capacity} guests
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start justify-between gap-3">
                 <span className="text-foreground-muted">Location</span>
-                <span className="text-right font-medium text-foreground">
+                <span className="max-w-[60%] text-right font-medium text-foreground">
                   {formatLocation(studio.location)}
                 </span>
               </div>
             </div>
 
-            <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-border-accent bg-accent-muted px-3 py-2.5">
+            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-border-accent bg-accent-muted px-3 py-2.5">
               <svg
                 className="mt-0.5 h-4 w-4 shrink-0 text-accent"
                 fill="none"
