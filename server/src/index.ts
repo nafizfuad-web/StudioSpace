@@ -9,12 +9,56 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL ?? "http://localhost:3000";
+const CLIENT_URL = (
+  process.env.CLIENT_URL ?? "http://localhost:3000"
+).replace(/\/+$/, "");
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+
+const PRIVATE_IPV4_PATTERN =
+  /^(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/;
+
+/**
+ * Local development is commonly opened through 127.0.0.1 or the LAN address
+ * Next prints. Those loopback/private origins are safe to reflect while
+ * credentials stay enabled; public origins are still rejected.
+ */
+function isDevelopmentOrigin(origin: string): boolean {
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== "http:" && protocol !== "https:") return false;
+
+    const host = hostname.toLowerCase();
+
+    return (
+      host === "localhost" ||
+      host.endsWith(".localhost") ||
+      host === "127.0.0.1" ||
+      host === "::1" ||
+      host === "[::1]" ||
+      PRIVATE_IPV4_PATTERN.test(host)
+    );
+  } catch {
+    return false;
+  }
+}
 
 // Cookie-based auth requires an exact origin plus credentialed requests.
+// Outside development only the configured CLIENT_URL is allowed.
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin(origin, callback) {
+      if (!origin || origin === CLIENT_URL) {
+        callback(null, true);
+        return;
+      }
+
+      if (IS_DEVELOPMENT && isDevelopmentOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
     credentials: true,
   })
 );
