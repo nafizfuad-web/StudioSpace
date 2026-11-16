@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/authClient";
@@ -37,11 +37,17 @@ export const StudioBookingActions: React.FC<StudioBookingActionsProps> = ({ stud
 
   // Wishlist state
   const [isSaved, setIsSaved] = useState(false);
+  // Avoid showing a stale saved state after the user signs out.
+  const saved = Boolean(user) && isSaved;
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   // Booking modal state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
+  });
   const [startTime, setStartTime] = useState("10:00");
   const [endTime, setEndTime] = useState("13:00");
   const [guestCount, setGuestCount] = useState(1);
@@ -52,25 +58,13 @@ export const StudioBookingActions: React.FC<StudioBookingActionsProps> = ({ stud
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successBookingId, setSuccessBookingId] = useState<string | null>(null);
 
-  // Set default date to tomorrow
-  useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    setSelectedDate(tomorrow.toISOString().split("T")[0]);
-  }, []);
-
   // Fetch initial wishlist status if user is authenticated
   useEffect(() => {
-    if (!user) {
-      setIsSaved(false);
-      return;
-    }
-
+    if (!user) return;
     let isMounted = true;
     checkStudioWishlist(studio._id).then((saved) => {
       if (isMounted) setIsSaved(saved);
     });
-
     return () => {
       isMounted = false;
     };
@@ -106,7 +100,7 @@ export const StudioBookingActions: React.FC<StudioBookingActionsProps> = ({ stud
     setIsWishlistLoading(true);
 
     try {
-      if (isSaved) {
+      if (saved) {
         await removeFromWishlist(studio._id);
         setIsSaved(false);
       } else {
@@ -198,16 +192,16 @@ export const StudioBookingActions: React.FC<StudioBookingActionsProps> = ({ stud
           type="button"
           onClick={handleToggleWishlist}
           disabled={isWishlistLoading}
-          aria-label={isSaved ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
           className={`w-full flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-            isSaved
+            saved
               ? "border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20"
               : "border-border-medium bg-surface-elevated text-foreground hover:bg-surface-hover hover:border-border-accent"
           }`}
         >
           <svg
             className={`h-4 w-4 transition-transform duration-200 ${
-              isSaved ? "fill-red-500 text-red-500 scale-110" : "fill-transparent text-foreground-secondary"
+              saved ? "fill-red-500 text-red-500 scale-110" : "fill-transparent text-foreground-secondary"
             }`}
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -220,7 +214,7 @@ export const StudioBookingActions: React.FC<StudioBookingActionsProps> = ({ stud
               d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
             />
           </svg>
-          <span>{isWishlistLoading ? "Updating..." : isSaved ? "Saved to Wishlist" : "Add to Wishlist"}</span>
+          <span>{isWishlistLoading ? "Updating..." : saved ? "Saved to Wishlist" : "Add to Wishlist"}</span>
         </button>
       </div>
 

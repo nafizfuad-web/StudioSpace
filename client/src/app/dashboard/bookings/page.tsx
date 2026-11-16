@@ -33,7 +33,24 @@ export default function MyBookingsPage() {
   };
 
   useEffect(() => {
-    loadBookings();
+    let active = true;
+
+    async function loadInitialBookings() {
+      try {
+        const data = await fetchMyBookings();
+        if (active) setBookings(data);
+      } catch (err) {
+        console.error("Failed to load bookings:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadInitialBookings();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleConfirmCancel = async () => {

@@ -61,6 +61,7 @@ export function createUserRouter(deps: UserRouterDeps): Router {
         const name = userDoc?.name ?? "";
         const email = userDoc?.email ?? sessionUser.email;
         const avatar = userDoc?.avatar ?? userDoc?.image ?? null;
+        const emailVerified = userDoc?.emailVerified ?? false;
 
         // Fetch user's latest host application if any
         let latestApp: HostApplicationDocument | null = null;
@@ -77,6 +78,7 @@ export function createUserRouter(deps: UserRouterDeps): Router {
             id: sessionUser.id,
             name,
             email,
+            emailVerified,
             role,
             avatar,
             hostApplication: latestApp

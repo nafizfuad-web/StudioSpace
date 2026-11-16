@@ -32,7 +32,24 @@ export default function MyProfilePage() {
   };
 
   useEffect(() => {
-    loadProfile();
+    let active = true;
+
+    async function loadInitialProfile() {
+      try {
+        const data = await fetchUserProfile();
+        if (active) setProfile(data);
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadInitialProfile();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleApply = async (e: React.FormEvent) => {
@@ -133,10 +150,17 @@ export default function MyProfilePage() {
               </span>
             </div>
             <p className="text-sm text-foreground-muted">{profile?.email}</p>
-            <div className="flex items-center gap-2 pt-1 text-xs text-emerald-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span>Email Verified</span>
-            </div>
+            {profile?.emailVerified ? (
+              <div className="flex items-center gap-2 pt-1 text-xs text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span>Email Verified</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 pt-1 text-xs text-amber-300">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span>Email verification is not required for this account</span>
+              </div>
+            )}
           </div>
         </div>
 

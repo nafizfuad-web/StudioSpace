@@ -13,19 +13,25 @@ export default function SavedStudiosPage() {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const loadSavedStudios = async () => {
-    try {
-      const data = await fetchWishlist();
-      setItems(data);
-    } catch (err) {
-      console.error("Failed to load wishlist:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadSavedStudios();
+    let active = true;
+
+    async function loadInitialSavedStudios() {
+      try {
+        const data = await fetchWishlist();
+        if (active) setItems(data);
+      } catch (err) {
+        console.error("Failed to load wishlist:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadInitialSavedStudios();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleRemove = async (studioId: string) => {
@@ -35,7 +41,7 @@ export default function SavedStudiosPage() {
 
     if (res.success) {
       setItems((prev) =>
-        prev.filter((item) => (item.studio._id || item.studio.id) !== studioId)
+        prev.filter((item) => item.studio._id !== studioId)
       );
     }
   };
@@ -108,7 +114,7 @@ export default function SavedStudiosPage() {
           {items.map((item) => {
             const studio = item.studio;
             if (!studio) return null;
-            const studioId = studio._id || studio.id;
+            const studioId = studio._id;
             const isRemoving = removingId === studioId;
 
             return (
@@ -133,7 +139,7 @@ export default function SavedStudiosPage() {
 
                   {/* Hourly Price Tag */}
                   <div className="absolute top-3 left-3 rounded-lg bg-black/75 backdrop-blur-md px-2.5 py-1 text-xs font-extrabold text-[#C2F800] shadow-md">
-                    ${studio.pricing?.hourly || 0}
+                    ${studio.pricePerHour}
                     <span className="text-[10px] font-normal text-foreground-muted">
                       /hr
                     </span>
@@ -186,7 +192,7 @@ export default function SavedStudiosPage() {
                       👥 Up to {studio.capacity || 5} guests
                     </span>
                     <span>
-                      ⏱ {studio.pricing?.minimumBookingHours || 1} hr min
+                      ⏱ {studio.booking?.minimumHours ?? 1} hr min
                     </span>
                   </div>
 

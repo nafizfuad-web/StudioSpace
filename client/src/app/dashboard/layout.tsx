@@ -53,13 +53,15 @@ export default function DashboardLayout({
       return () => {
         isMounted = false;
       };
-    } else if (!session.isPending) {
-      setLoadingProfile(false);
     }
-  }, [session.isPending, user]);
+  }, [user]);
+
+  // Only wait for a profile when there is an authenticated user. A settled,
+  // signed-out session is handled by the redirect branch below.
+  const isProfileLoading = Boolean(user) && loadingProfile;
 
   // Loading state
-  if (session.isPending || (loadingProfile && !profile)) {
+  if (session.isPending || (isProfileLoading && !profile)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-4">

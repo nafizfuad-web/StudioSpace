@@ -34,18 +34,28 @@ function buildAuth(db: Db) {
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
+  // A trailing slash in CLIENT_URL would make an otherwise valid browser
+  // origin fail Better Auth's trusted-origin comparison.
+  const clientUrl = (
+    process.env.CLIENT_URL ?? "http://localhost:3000"
+  ).replace(/\/+$/, "");
+
   return betterAuth({
     database: mongodbAdapter(db),
     baseURL:
       process.env.BETTER_AUTH_URL ?? `http://localhost:${process.env.PORT ?? 5000}`,
     secret: getRequiredSecret(),
-    trustedOrigins: [process.env.CLIENT_URL ?? "http://localhost:3000"],
+    trustedOrigins: [clientUrl],
     ...(googleClientId && googleClientSecret
       ? {
           socialProviders: {
             google: {
               clientId: googleClientId,
               clientSecret: googleClientSecret,
+              scope: ["openid", "email", "profile"],
+              disableDefaultScope: true,
+              includeGrantedScopes: false,
+              prompt: "select_account",
             },
           },
         }
@@ -66,6 +76,12 @@ function buildAuth(db: Db) {
     },
     session: {
       modelName: "sessions",
+      expiresIn: 60 * 60 * 24 * 30,         // 30 days in seconds
+      updateAge: 60 * 60 * 24,              // refresh token daily if used
+      cookieCache: {
+        enabled: true,
+        maxAge: 60 * 60 * 24,              // re-validate from DB every 24h
+      },
     },
     account: {
       modelName: "accounts",
@@ -117,6 +133,10 @@ export async function resolveSessionWith(
 ): Promise<AuthUser | null> {
   const session = await authInstance.api.getSession({
     headers: fromNodeHeaders(req.headers),
+    // Authorization must reflect the database, not the short-lived cookie
+    // cache. Without this, a role change, sign-out, or revoked session can
+    // remain usable until the cached copy expires.
+    query: { disableCookieCache: true },
   });
 
   if (!session?.user) {

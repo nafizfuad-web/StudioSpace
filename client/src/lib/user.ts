@@ -13,6 +13,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  emailVerified?: boolean;
   role: UserRole;
   avatar?: string | null;
   hostApplication?: HostApplicationInfo | null;

@@ -462,7 +462,7 @@ export default function DashboardOverviewPage() {
                       </div>
                     )}
                     <div className="absolute top-2 right-2 rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-[#C2F800]">
-                      ${studio.pricing?.hourly || 0}/hr
+                      ${studio.pricePerHour}/hr
                     </div>
                   </div>
 
@@ -476,7 +476,7 @@ export default function DashboardOverviewPage() {
 
                     <div className="pt-2">
                       <Link
-                        href={`/studios/${studio._id || studio.id}`}
+                        href={`/studios/${studio._id}`}
                         className="inline-flex w-full items-center justify-center rounded-lg bg-[#C2F800]/10 border border-[#C2F800]/30 py-1.5 text-xs font-bold text-[#C2F800] transition hover:bg-[#C2F800] hover:text-black"
                       >
                         View Studio
